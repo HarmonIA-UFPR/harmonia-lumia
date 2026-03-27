@@ -1,0 +1,95 @@
+# ======================================================================
+#  ESTRUTURA DOCKER COMPOSE
+# ======================================================================
+# PORTAS:
+# 55030:50032 - Backend / app-harmonia
+# 55031:55031 - PostgreSQL 18 / app-harmonia
+# 55032:55032 - PostgreSQL 18 / app-agente
+# 55031:55030 - Backend / app-harmonia
+
+# 55038:8080  - Weavite / 
+# 55039:50051 - Weavite / 
+
+services:
+      
+  # ======================
+  #  Weaviate (Banco vetorial)
+  # ======================
+  harmonia-weaviate:
+    image: semitechnologies/weaviate:1.27.2
+    container_name: harmonia-weaviate
+    ports:
+      - "55038:8080"
+      - "55039:50051"
+    volumes:
+      - harmonia-weaviate_data:/var/lib/weaviate
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: 'none'
+    restart: on-failure
+    networks:
+      - harmonia-network
+
+  # ======================
+  #  POSTGRESQL (Banco relacional)
+  # ======================
+  harmonia-pg18-backend:
+    image: postgres:18.1-alpine3.23
+    container_name: harmonia-pg18-backend
+    shm_size: 256mb
+    restart: no
+    environment:
+      PGPORT: 5400
+      POSTGRES_USER: harmonia
+      POSTGRES_PASSWORD: "harmonia2025"
+      POSTGRES_DB: harmonia
+      POSTGRES_INITDB_ARGS: "--locale=pt_BR.UTF-8 --encoding=UTF8"
+      LANG: pt_BR.utf8
+    command: ["postgres", "-p", "5400"]
+    ports:
+      - "55031:5400"
+    volumes:
+      - harmonia-pg18-backend:/var/lib/postgresql
+      - ./database/scripts-backend:/docker-entrypoint-initdb.d
+    networks:
+      - harmonia-network
+
+  harmonia-pg18-agente:
+    image: postgres:18.1-alpine3.23
+    container_name: harmonia-pg18-agente
+    shm_size: 256mb
+    restart: no
+    environment:
+      PGPORT: 5401
+      POSTGRES_USER: harmonia
+      POSTGRES_PASSWORD: "harmonia2025"
+      POSTGRES_DB: harmonia
+    command: ["postgres", "-p", "5401"]
+    ports:
+      - "55032:5401"
+    volumes:
+      - harmonia-pg18-agente:/var/lib/postgresql
+      - ./database/scripts-agente:/docker-entrypoint-initdb.d
+    networks:
+      - harmonia-network
+
+
+
+# ======================
+#  VOLUMES
+# ======================
+volumes:
+  harmonia-pg18-backend:
+  harmonia-pg18-agente:
+  harmonia-weaviate_data:
+
+# ======================
+#  REDE INTERNA
+# ======================
+networks:
+  harmonia-network:
+    name: harmonia-network
+    external: false 
