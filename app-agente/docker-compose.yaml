@@ -1,0 +1,21 @@
+services:
+  app-agente:
+    image: app-agente:v0.1
+    build:
+      context: .
+      dockerfile: src/agente_chat/Dockerfile
+    container_name: app-agente
+    volumes:
+      - ./:/app
+      - /home/albano/test/modelos:/app/modelos
+    ports:
+      - "55036:50053"
+    stdin_open: true
+    tty: true
+    env_file:
+      - ./src/agente_chat/config/.env
+    networks:
+      - harmonia-network
+networks:
+  harmonia-network:
+    external: true

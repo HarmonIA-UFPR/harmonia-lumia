@@ -1,0 +1,75 @@
+[project]
+name = "agente-chat"
+version = "0.1.0"
+description = "HarmonIA Agente Chat — Recomendação de ferramentas de IA via RAG (DDD)"
+authors = [{ name = "Patrick", email = "patrick.ribeiro@ufpr.br" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dynamic = ["dependencies"]
+
+[project.scripts]
+agente-chat = "main:run_server"
+
+[tool.poetry]
+packages = [{ include = "agente_chat", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+# --- Core IA & OpenVINO ---
+openvino = "2024.5.0"
+optimum-intel = { extras = ["openvino"], version = "1.21.0" }
+nncf = "2.14.0"
+transformers = "^4.45.2"
+torch = { version = "2.3.1", source = "pytorch-cpu" }
+
+# --- Banco Vetorial ---
+weaviate-client = "^4.6.0"
+
+# --- API ---
+fastapi = "^0.115.0"
+uvicorn = { extras = ["standard"], version = "^0.30.0" }
+pydantic = { extras = ["email"], version = "^2.7.0" }
+pydantic-settings = "^2.4.0"
+python-dotenv = "^1.0.1"
+orjson = "^3.10.0"
+
+# --- Utilidades ---
+numpy = "^1.26.4"
+json-repair = "^0.58.5"
+edwh-uuid7 = "^0.2.3"
+
+# --- Banco de Dados PostgreSQL ---
+asyncpg = "^0.29.0"
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+httpx = "^0.27.0"
+black = "^24.0.0"
+ruff = "^0.4.0"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.black]
+target-version = ["py312"]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
