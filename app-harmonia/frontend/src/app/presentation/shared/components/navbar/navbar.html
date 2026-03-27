@@ -1,0 +1,25 @@
+<nav class="bg-[#2b4699] shadow-md p-4 flex justify-between items-center text-white" aria-label="Navegação principal">
+  <a routerLink="/" class="flex items-center gap-2 font-bold text-xl tracking-tight" aria-label="HarmonIA - Ir para página inicial">
+    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-indigo-600" aria-hidden="true">
+      <img src="images/logo-bg-azul.jpg" alt="">
+    </div>
+    HarmonIA
+  </a>
+  <div>
+    @if (!isAuthenticated()) {
+      <a
+        routerLink="/auth/login"
+        class="px-5 py-2 bg-white text-[#2b4699] hover:underline shadow-md rounded-full font-medium transition-colors shadow-sm inline-block"
+        >Entrar</a
+      >
+    } @else {
+      <button
+        (click)="logout()"
+        aria-label="Sair da conta"
+        class="px-5 py-2 border border-white hover:bg-white hover:text-indigo-600 rounded-full font-medium transition-colors shadow-sm"
+      >
+        Sair
+      </button>
+    }
+  </div>
+</nav>

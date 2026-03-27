@@ -1,0 +1,44 @@
+<!-- User Prompt Message -->
+<div class="flex w-full justify-end animate-fade-in-up mb-6">
+  <div class="flex gap-3 max-w-[95%] flex-row-reverse">
+    <div class="flex-shrink-0">
+      <div class="w-9 h-9 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center text-gray-600 shadow-sm font-bold text-sm" aria-hidden="true">
+        U
+      </div>
+    </div>
+    <div class="flex flex-col items-end group">
+      <div class="px-5 py-3.5 shadow-sm text-[15px] leading-relaxed relative bg-[#2b4699] text-white rounded-2xl rounded-tr-sm">
+        {{ historyChat().his_user_prompt }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Response Message -->
+<div class="flex w-full justify-start animate-fade-in-up mb-6 border-b border-gray-100 pb-6">
+  <div class="flex gap-3 max-w-[95%] flex-row">
+    <div class="flex-shrink-0">
+      <div class="w-9 h-9 p-2 pr-[10px] rounded-full bg-[#2b4699] flex items-center justify-center text-white shadow-md font-bold" aria-hidden="true">
+        <img src="images/logo-bg-azul.jpg" alt="">
+      </div>
+    </div>
+    <div class="flex flex-col items-start group flex-1">
+      <div class="w-full px-5 py-3.5 shadow-sm text-[15px] leading-relaxed relative bg-[#53535350] border border-[#53535370] text-gray-900 rounded-2xl rounded-tl-sm">
+        <p>{{ historyChat().his_llm_response }}</p>
+
+        <!-- Tools render block -->
+        <ng-container *ngIf="historyChat().his_tool_recom_jsonb && historyChat().his_tool_recom_jsonb.length > 0">
+          <div class="mt-4 flex flex-col gap-3">
+            <h4 class="text-sm font-semibold text-gray-700 border-b border-gray-300 pb-1">Ferramentas Recomendadas:</h4>
+            <div class="flex flex-wrap gap-2">
+              <ng-container *ngFor="let rec of historyChat().his_tool_recom_jsonb">
+                <app-tool-card [tool]="rec.tool_uuid"></app-tool-card>
+              </ng-container>
+            </div>
+          </div>
+        </ng-container>
+
+      </div>
+    </div>
+  </div>
+</div>

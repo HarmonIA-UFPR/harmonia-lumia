@@ -1,0 +1,91 @@
+  <div class="border border-gray-200 rounded-xl p-2.5 shadow-sm cursor-pointer transition-all duration-200 ease-in-out flex flex-col justify-between min-h-[220px] w-[260px] hover:bg-gray-50 hover:border-blue-600 hover:-translate-y-0.5 hover:shadow-md overflow-y-auto bg-white" (click)="viewTool()">
+    <div class="flex flex-col gap-[1px]">
+        <div class="flex flex-row justify-between">
+            @if (toolI(); as t) {
+                      <div class="user-info">
+                        <h3 class="text-[1.1rem] text-gray-800 font-bold">{{ t.tool_name }}</h3>
+                      </div>
+            } @else {
+                      <h3 class="text-[1.1rem] text-gray-800 font-bold">Carregando ou ferramenta não encontrada...</h3>
+                    }
+
+        <!--<div class="flex justify-between items-center"> //AINDA NÃO TEM CAMPO ESTRELAS ENT DEIXAR DESATIVADO POR ENQUANTO
+              <span class="flex items-center text-sm font-semibold text-amber-500">
+                2
+                <img class="w-3.5 h-3.5" src="https://cdn-icons-png.flaticon.com/512/8212/8212616.png" alt="Estrela">
+              </span>
+            </div>-->
+        </div>
+
+        <div (click)="toggleDesc($event)" class="cursor-help transition-all duration-300 ease-in-out min-h-[1.5em] hover:text-blue-500 hover:underline hover:bg-[#41AFB250]">
+              @if(toolI(); as t){
+                <p class="text-gray-600 text-[0.85rem] grow">
+                  {{ clickedDesc ? t.tool_description : shortDesc() }}
+                </p>
+              }
+        </div>
+    </div>
+    
+  
+    <div class="flex flex-col justify-between">
+        <div class="flex flex-col p-2 gap-2">
+          <div class="flex flex-row gap-2 justify-start items-center">
+            <p class="m-0 text-sm font-semibold">Visite o site oficial:</p>
+            <span>
+              @if(toolI(); as t){
+                @if(t.tool_official_link) {
+                  <a [href]="t.tool_official_link" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="link text-blue-600 hover:text-blue-800 underline" 
+                    (click)="handleLinkClick($event)">
+                    Site
+                  </a>
+                } @else {
+                  <span class="text-gray-400">Indisponível</span>
+                }
+              }
+            </span>
+          </div>
+
+          <div class="flex flex-row gap-2 justify-start items-center">
+            <p class="m-0 text-sm font-semibold">Repositório GitHub:</p>
+            <span>
+              @if(toolI(); as t){
+                @if(t.tool_repository_link) {
+                  <a [href]="t.tool_repository_link" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="link text-blue-600 hover:text-blue-800 underline" 
+                    (click)="handleLinkClick($event)">
+                    Repositório
+                  </a>
+                } @else {
+                  <span class="text-gray-400">N/A</span>
+                }
+              }
+            </span>
+          </div>
+
+          <div class="flex flex-row gap-2 justify-start items-center">
+            <p class="m-0 text-sm font-semibold">Documentação:</p>
+            <span>
+              @if(toolI(); as t){
+                @if(t.tool_documentation_link) {
+                  <a [href]="t.tool_documentation_link" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="link text-blue-600 hover:text-blue-800 underline" 
+                    (click)="handleLinkClick($event)">
+                    Docs
+                  </a>
+                } @else {
+                  <span class="text-gray-400">N/A</span>
+                }
+              }
+            </span>
+          </div>
+        </div>
+    </div>
+    
+  </div>

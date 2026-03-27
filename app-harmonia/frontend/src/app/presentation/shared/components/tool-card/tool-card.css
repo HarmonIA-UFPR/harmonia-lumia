@@ -1,0 +1,8 @@
+/* tool-card.component.css */
+/* As regras foram migradas para utilitários Tailwind no tool-card.html */
+
+/* Manter o estilo especial de link padrão que já existia */
+.link:hover {
+  font-weight: 500;
+  text-decoration: underline;
+}
