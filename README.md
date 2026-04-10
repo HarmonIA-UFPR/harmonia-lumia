@@ -107,4 +107,9 @@ http://localhost:55036
 
 4. Para criar um novo chat, na tela de chat clique sobre o nome do usuário (ex: "Beto") e depois clique em:  **"Novo Chat"**.
    
-6. Agora é só solicitar suas recomendações! 
+6. Agora é só solicitar suas recomendações!
+
+7. Observação:
+Na base de dados referente à esta Fase do projeto, foi identificado que algumas fontes apresentam desatualizações, especialmente no que diz respeito a links de páginas oficiais, repositórios e documentações de determinadas ferramentas. Essa situação é relativamente comum em ambientes que lidam com tecnologias dinâmicas, nas quais conteúdos e endereços são frequentemente modificados ou descontinuados ao longo do tempo.
+
+Com o objetivo de garantir a qualidade, a confiabilidade e a atualidade das informações disponibilizadas, mantém-se um processo contínuo de revisão e atualização dessas fontes, o qual se estende e se consolida ao longo das próximas fases do projeto.
