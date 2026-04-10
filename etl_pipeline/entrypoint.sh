@@ -6,13 +6,13 @@ echo "  HarmonIA ETL Pipeline"
 echo "============================================"
 
 # Aguarda o Weaviate estar pronto antes de iniciar
-echo "[*] Aguardando Weaviate em ${WEAVIATE_HOST}:${WEAVIATE_HTTP_PORT}..."
-until curl -sf "http://${WEAVIATE_HOST}:${WEAVIATE_HTTP_PORT}/v1/.well-known/ready" > /dev/null; do
-  echo "    Weaviate ainda não está pronto. Tentando novamente em 3s..."
-  sleep 3
-done
-echo "[+] Weaviate está pronto."
-echo ""
+# echo "[*] Aguardando Weaviate em ${WEAVIATE_HOST}:${WEAVIATE_HTTP_PORT}..."
+# until curl -sf "http://${WEAVIATE_HOST}:${WEAVIATE_HTTP_PORT}/v1/.well-known/ready" > /dev/null; do
+#   echo "    Weaviate ainda não está pronto. Tentando novamente em 3s..."
+#   sleep 3
+# done
+# echo "[+] Weaviate está pronto."
+# echo ""
 
 # Etapa 1: Download do LaBSE
 echo "--------------------------------------------"

@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------------------------- # 
+# Script      : ./install
+# Description : 
+# Version     : 0.1
+# Author      : Albano Roberto Drescher Von Maywitz 
+# Data        : 09 de abril de 2026
+# ------------------------------------------------------------------------------- # 
+# Use : 
+# ------------------------------------------------------------------------------- # 
+# Copyright (C) 2026, Albano <allbano@gmail.com>.
+# License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+# This is free software: you are free to change and redistribute it.
+# There is NO WARRANTY, to the extent permitted by law.
+# ------------------------------------------------------------------------------- #  
+
+# Environment variables
+line="# ------------------------------------------------------------------------------ # "
+PYTHON_VERSION=$( python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+
+
+# Error messages
+err[0]='Erro ao executar o pipeline do Projeto HARMONIA - Fase 1'
+err[1]='A versão instalada deve ser a Python 3.12!'
+err[2]='Número incorreto de argumentos!'
+
+
+
+die() {
+
+	echo ${err[0]}
+	echo ${err[$1]}
+	exit $1
+}
+
+
+
+# MAIN
+# Passo 1 - rodar o docker compose
+docker compose -f docker-compose-harmonia.yaml up harmonia-weaviate harmonia-pg18-backend harmonia-pg18-agente
+
+# Passo 2 - verificar a versão do python
+# Não sendo versão 3.12 sair!
+[[ "$PYTHON_VERSION" != "3.12" ]] && die 1
+
+python -m venv venv
+source venv/bin/activate
+pip install --upgrade pip poetry
+poetry env use venv/bin/python
+
+# Passo 3 - rodar o SCRIPT ENTRYPOINT
+./etl_pipeline/entrypoint.sh
+
+# Passo 4 - remover o ambiente virtual
+deactivate
+rm -rf venv

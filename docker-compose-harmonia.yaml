@@ -5,7 +5,7 @@
 # 55030:50032 - Backend / app-harmonia
 # 55031:55031 - PostgreSQL 18 / app-harmonia
 # 55032:55032 - PostgreSQL 18 / app-agente
-# 55031:55030 - Backend / app-harmonia
+# 55033:55030 - Backend / app-agente
 
 # 55038:8080  - Weavite / 
 # 55039:50051 - Weavite / 
@@ -16,7 +16,7 @@ services:
   #  Weaviate (Banco vetorial)
   # ======================
   harmonia-weaviate:
-    image: semitechnologies/weaviate:1.27.2
+    image: cr.weaviate.io/semitechnologies/weaviate:1.27.2
     container_name: harmonia-weaviate
     ports:
       - "55038:8080"
@@ -28,16 +28,18 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'none'
+      CLUSTER_HOSTNAME: 'node1'
       ENABLE_MODULES: 'none'
-    restart: on-failure
+      restart: on-failure
     networks:
       - harmonia-network
+
 
   # ======================
   #  POSTGRESQL (Banco relacional)
   # ======================
   harmonia-pg18-backend:
-    image: postgres:18.1-alpine3.23
+    image: postgres:18.3-alpine3.23
     container_name: harmonia-pg18-backend
     shm_size: 256mb
     restart: no
@@ -58,7 +60,7 @@ services:
       - harmonia-network
 
   harmonia-pg18-agente:
-    image: postgres:18.1-alpine3.23
+    image: postgres:18.3-alpine3.23
     container_name: harmonia-pg18-agente
     shm_size: 256mb
     restart: no
@@ -76,6 +78,40 @@ services:
     networks:
       - harmonia-network
 
+  harmonia-app:
+    image: harmonia-app:v0.1
+    build:
+      context: ./app-harmonia/backend
+      dockerfile: Dockerfile
+    container_name: harmonia-app
+    volumes:
+      - ./app-harmonia/backend/:/app
+    ports:
+      - "55030:50052"
+    stdin_open: true
+    tty: true
+    env_file:
+    - ./config/.env-harmonia-app
+    networks:
+        - harmonia-network
+
+  harmonia-agente:
+    image: harmonia-agente:v0.1
+    build:
+      context: ./app-agente
+      dockerfile: src/agente_chat/Dockerfile
+    container_name: harmonia-agente
+    volumes:
+      - ./app-agente:/app
+      - ./modelos:/app/modelos
+    ports:
+      - "55036:50053"
+    stdin_open: true
+    tty: true
+    env_file:
+      - ./config/.env-harmonia-agente
+    networks:
+      - harmonia-network
 
 
 # ======================
@@ -83,8 +119,14 @@ services:
 # ======================
 volumes:
   harmonia-pg18-backend:
+    name: harmonia-pg18-backend
+    driver: local
   harmonia-pg18-agente:
+    name: harmonia-pg18-agente
+    driver: local
   harmonia-weaviate_data:
+    name: harmonia-weaviate_data
+    driver: local
 
 # ======================
 #  REDE INTERNA
