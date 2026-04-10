@@ -5,6 +5,7 @@ DO $$
 BEGIN
     -- Criação dos esquemas lógicos para separação de contexto
     CREATE SCHEMA IF NOT EXISTS harmonia;
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
     
     RAISE NOTICE 'Contexto 1: Esquemas criados com sucesso.';
 END $$;

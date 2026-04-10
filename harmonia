@@ -1,57 +1,413 @@
 #!/usr/bin/env bash
 
-# ------------------------------------------------------------------------------- # 
-# Script      : ./install
-# Description : 
-# Version     : 0.1
-# Author      : Albano Roberto Drescher Von Maywitz 
-# Data        : 09 de abril de 2026
-# ------------------------------------------------------------------------------- # 
-# Use : 
-# ------------------------------------------------------------------------------- # 
+# ------------------------------------------------------------------------------- #
+# Script      : ./harmonia
+# Description : Bootstrap do Projeto HARMONIA - Fase 1
+# Version     : 0.2
+# Author      : Albano Roberto Drescher Von Maywitz
+# Data        : 10 de abril de 2026
+# ------------------------------------------------------------------------------- #
 # Copyright (C) 2026, Albano <allbano@gmail.com>.
 # License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
-# ------------------------------------------------------------------------------- #  
+# ------------------------------------------------------------------------------- #
 
-# Environment variables
-line="# ------------------------------------------------------------------------------ # "
-PYTHON_VERSION=$( python --version | cut -d' ' -f2 | cut -d'.' -f1,2)
+set -Eeuo pipefail
 
+readonly LINE="# ------------------------------------------------------------------------------ #"
+readonly COMPOSE_FILE="docker-compose-harmonia.yaml"
+readonly VENV_DIR="venv"
+readonly REQUIRED_PYTHON="3.12"
 
-# Error messages
-err[0]='Erro ao executar o pipeline do Projeto HARMONIA - Fase 1'
-err[1]='A versão instalada deve ser a Python 3.12!'
-err[2]='Número incorreto de argumentos!'
+readonly CORE_SERVICES=(
+  "harmonia-weaviate"
+  "harmonia-pg18-backend"
+  "harmonia-pg18-agente"
+)
 
+readonly APP_SERVICES=(
+  "harmonia-app"
+  "harmonia-agente"
+)
 
-
-die() {
-
-	echo ${err[0]}
-	echo ${err[$1]}
-	exit $1
+fail() {
+  echo ""
+  echo "[ERRO] $1" >&2
+  exit 1
 }
 
+print_help() {
+  cat <<'EOF'
+Uso:
+  ./harmonia [OPCAO]
 
+Descricao:
+  Executa o bootstrap do projeto HarmonIA em modo modular, com execucao
+  e teste para cada etapa.
 
-# MAIN
-# Passo 1 - rodar o docker compose
-docker compose -f docker-compose-harmonia.yaml up harmonia-weaviate harmonia-pg18-backend harmonia-pg18-agente
+Opcoes principais:
+  -a, --all              Executa todo o pipeline (passos 1 a 5)
+  -c, --core             Passo 1: sobe infraestrutura base
+  -p, --python           Passo 2: valida versao do Python
+  -v, --venv             Passo 3.0: cria e configura venv + Poetry
+  -e, --etl              Passo 3 completo (3.1 a 3.6)
 
-# Passo 2 - verificar a versão do python
-# Não sendo versão 3.12 sair!
-[[ "$PYTHON_VERSION" != "3.12" ]] && die 1
+Opcoes ETL detalhadas:
+  -l, --labse-download   Passo 3.1: download do LaBSE
+  -L, --labse-quantize   Passo 3.2: quantizacao do LaBSE
+  -q, --qwen-download    Passo 3.3: download do Qwen
+  -Q, --qwen-quantize    Passo 3.4: quantizacao do Qwen
+  -f, --cleanup-fp32     Passo 3.5: remove modelos FP32
+  -i, --ingest           Passo 3.6: ingestao no Weaviate
 
-python -m venv venv
-source venv/bin/activate
-pip install --upgrade pip poetry
-poetry env use venv/bin/python
+Opcoes finais:
+  -r, --cleanup-venv     Passo 4: remove ambiente virtual
+  -s, --apps             Passo 5: sobe app e agente
+  -h, --help             Exibe este menu de ajuda
 
-# Passo 3 - rodar o SCRIPT ENTRYPOINT
-./etl_pipeline/entrypoint.sh
+Exemplos:
+  ./harmonia --all
+  ./harmonia -e
+  ./harmonia --qwen-quantize
+EOF
+}
 
-# Passo 4 - remover o ambiente virtual
-deactivate
-rm -rf venv
+log_banner() {
+  echo ""
+  echo "$LINE"
+  echo "$1"
+  echo "$LINE"
+}
+
+assert_dir_exists() {
+  local path="$1"
+  [[ -d "$path" ]] || fail "Diretorio nao encontrado: $path"
+}
+
+assert_file_exists() {
+  local path="$1"
+  [[ -f "$path" ]] || fail "Arquivo nao encontrado: $path"
+}
+
+assert_not_exists() {
+  local path="$1"
+  [[ ! -e "$path" ]] || fail "Nao deveria existir: $path"
+}
+
+assert_service_running() {
+  local service="$1"
+  docker compose -f "$COMPOSE_FILE" ps --status running --services | rg -qx "$service" \
+    || fail "Servico '$service' nao esta em execucao."
+}
+
+run_checked_step() {
+  local title="$1"
+  local exec_fn="$2"
+  local test_fn="$3"
+
+  log_banner "$title"
+  echo "[EXEC] $exec_fn"
+  "$exec_fn"
+  echo "[TEST] $test_fn"
+  "$test_fn"
+  echo "[OK] $title"
+}
+
+step_start_core_services() {
+  docker compose -f "$COMPOSE_FILE" up -d "${CORE_SERVICES[@]}"
+}
+
+test_start_core_services() {
+  local service
+  for service in "${CORE_SERVICES[@]}"; do
+    assert_service_running "$service"
+  done
+}
+
+step_validate_python_version() {
+  local python_version
+  python_version="$(python --version | cut -d' ' -f2 | cut -d'.' -f1,2)"
+  [[ "$python_version" == "$REQUIRED_PYTHON" ]] \
+    || fail "Versao instalada: $python_version. A versao requerida do Python: $REQUIRED_PYTHON."
+}
+
+test_validate_python_version() {
+  step_validate_python_version
+}
+
+step_prepare_venv_and_poetry() {
+  python -m venv "$VENV_DIR"
+  # shellcheck disable=SC1091
+  source "$VENV_DIR/bin/activate"
+  pip install --upgrade pip poetry
+  poetry env use "$VENV_DIR/bin/python"
+  poetry install --no-interaction --no-root
+}
+
+test_prepare_venv_and_poetry() {
+  assert_file_exists "$VENV_DIR/bin/activate"
+  command -v poetry >/dev/null 2>&1 || fail "Poetry nao encontrado no ambiente virtual."
+  poetry run python -c "import sys; assert sys.version_info[:2] == (3, 12)"
+  poetry run python -c "import huggingface_hub"
+}
+
+etl_download_labse() {
+  poetry run python -m etl_pipeline.download_model \
+    --repo-id "sentence-transformers/LaBSE" \
+    --local-dir "modelos/LaBSE" \
+    --preset "labse"
+}
+
+test_etl_download_labse() {
+  assert_dir_exists "modelos/LaBSE"
+  assert_file_exists "modelos/LaBSE/config.json"
+}
+
+etl_quantize_labse() {
+  poetry run python -m etl_pipeline.quantize_labse
+}
+
+test_etl_quantize_labse() {
+  assert_dir_exists "modelos/LaBSE_int8"
+  assert_file_exists "modelos/LaBSE_int8/openvino_model.xml"
+}
+
+etl_download_qwen() {
+  poetry run python -m etl_pipeline.download_model \
+    --repo-id "Qwen/Qwen2.5-1.5B-Instruct" \
+    --local-dir "modelos/Qwen"
+}
+
+test_etl_download_qwen() {
+  assert_dir_exists "modelos/Qwen"
+  assert_file_exists "modelos/Qwen/config.json"
+}
+
+etl_quantize_qwen() {
+  poetry run python -m etl_pipeline.quantize_model
+}
+
+test_etl_quantize_qwen() {
+  assert_dir_exists "modelos/Qwen_int8"
+  assert_file_exists "modelos/Qwen_int8/openvino_model.xml"
+}
+
+etl_cleanup_fp32_models() {
+  rm -rf modelos/LaBSE modelos/Qwen
+}
+
+test_etl_cleanup_fp32_models() {
+  assert_not_exists "modelos/LaBSE"
+  assert_not_exists "modelos/Qwen"
+  assert_dir_exists "modelos/LaBSE_int8"
+  assert_dir_exists "modelos/Qwen_int8"
+}
+
+etl_ingest_weaviate() {
+  poetry run python -m etl_pipeline.vector_data
+}
+
+test_etl_ingest_weaviate() {
+  poetry run python -m etl_pipeline.check_db_vector --expected-from-jsonl
+}
+
+test_etl_ingest_weaviate_quiet() {
+  local diag_output_file
+  diag_output_file="$(mktemp)"
+
+  if poetry run python -m etl_pipeline.check_db_vector --expected-from-jsonl >"$diag_output_file"; then
+    echo "[OK] Diagnostico vetorial validado."
+    rm -f "$diag_output_file"
+    return 0
+  fi
+
+  echo "[ERRO] Falha no diagnostico vetorial. Saida completa:" >&2
+  cat "$diag_output_file" >&2
+  rm -f "$diag_output_file"
+  return 1
+}
+
+step_cleanup_venv() {
+  if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+    deactivate
+  fi
+  rm -rf "$VENV_DIR"
+}
+
+test_cleanup_venv() {
+  assert_not_exists "$VENV_DIR"
+}
+
+step_start_app_services() {
+  docker compose -f "$COMPOSE_FILE" up -d "${APP_SERVICES[@]}"
+}
+
+test_start_app_services() {
+  local service
+  for service in "${APP_SERVICES[@]}"; do
+    assert_service_running "$service"
+  done
+}
+
+parse_args() {
+  local option_count=0
+  TARGET=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -a | --all)
+        TARGET="all"
+        ((option_count += 1))
+        ;;
+      -c | --core)
+        TARGET="core"
+        ((option_count += 1))
+        ;;
+      -p | --python)
+        TARGET="python"
+        ((option_count += 1))
+        ;;
+      -v | --venv)
+        TARGET="venv"
+        ((option_count += 1))
+        ;;
+      -e | --etl)
+        TARGET="etl"
+        ((option_count += 1))
+        ;;
+      -l | --labse-download)
+        TARGET="labse-download"
+        ((option_count += 1))
+        ;;
+      -L | --labse-quantize)
+        TARGET="labse-quantize"
+        ((option_count += 1))
+        ;;
+      -q | --qwen-download)
+        TARGET="qwen-download"
+        ((option_count += 1))
+        ;;
+      -Q | --qwen-quantize)
+        TARGET="qwen-quantize"
+        ((option_count += 1))
+        ;;
+      -f | --cleanup-fp32)
+        TARGET="cleanup-fp32"
+        ((option_count += 1))
+        ;;
+      -i | --ingest)
+        TARGET="ingest"
+        ((option_count += 1))
+        ;;
+      -r | --cleanup-venv)
+        TARGET="cleanup-venv"
+        ((option_count += 1))
+        ;;
+      -s | --apps)
+        TARGET="apps"
+        ((option_count += 1))
+        ;;
+      -h | --help)
+        print_help
+        exit 0
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        fail "Opcao invalida: '$1'. Use --help para ver as opcoes."
+        ;;
+      *)
+        fail "Argumento invalido: '$1'. Use opcoes no formato --nome ou -x."
+        ;;
+    esac
+    shift
+  done
+
+  if [[ $# -gt 0 ]]; then
+    fail "Argumentos extras nao sao suportados. Use apenas uma opcao por execucao."
+  fi
+
+  if [[ "$option_count" -eq 0 ]]; then
+    print_help
+    exit 0
+  fi
+
+  if [[ "$option_count" -gt 1 ]]; then
+    fail "Use apenas uma opcao por execucao. Exemplo: ./harmonia --all"
+  fi
+}
+
+main() {
+  parse_args "$@"
+
+  case "$TARGET" in
+    all)
+      run_checked_step "Passo 1 - Subir infraestrutura base" step_start_core_services test_start_core_services
+      run_checked_step "Passo 2 - Validar versao do Python" step_validate_python_version test_validate_python_version
+      run_checked_step "Passo 3.0 - Preparar venv + Poetry" step_prepare_venv_and_poetry test_prepare_venv_and_poetry
+
+      log_banner "Passo 3 - Pipeline ETL (execucao + testes por etapa)"
+      run_checked_step "Passo 3.1 - Download do LaBSE" etl_download_labse test_etl_download_labse
+      run_checked_step "Passo 3.2 - Quantizacao do LaBSE" etl_quantize_labse test_etl_quantize_labse
+      run_checked_step "Passo 3.3 - Download do Qwen" etl_download_qwen test_etl_download_qwen
+      run_checked_step "Passo 3.4 - Quantizacao do Qwen" etl_quantize_qwen test_etl_quantize_qwen
+      run_checked_step "Passo 3.5 - Limpeza dos modelos FP32" etl_cleanup_fp32_models test_etl_cleanup_fp32_models
+      run_checked_step "Passo 3.6 - Ingestao no Weaviate" etl_ingest_weaviate test_etl_ingest_weaviate_quiet
+
+      run_checked_step "Passo 4 - Remover ambiente virtual" step_cleanup_venv test_cleanup_venv
+      run_checked_step "Passo 5 - Subir app e agente" step_start_app_services test_start_app_services
+      ;;
+    core)
+      run_checked_step "Passo 1 - Subir infraestrutura base" step_start_core_services test_start_core_services
+      ;;
+    python)
+      run_checked_step "Passo 2 - Validar versao do Python" step_validate_python_version test_validate_python_version
+      ;;
+    venv)
+      run_checked_step "Passo 3.0 - Preparar venv + Poetry" step_prepare_venv_and_poetry test_prepare_venv_and_poetry
+      ;;
+    etl)
+      log_banner "Passo 3 - Pipeline ETL (execucao + testes por etapa)"
+      run_checked_step "Passo 3.1 - Download do LaBSE" etl_download_labse test_etl_download_labse
+      run_checked_step "Passo 3.2 - Quantizacao do LaBSE" etl_quantize_labse test_etl_quantize_labse
+      run_checked_step "Passo 3.3 - Download do Qwen" etl_download_qwen test_etl_download_qwen
+      run_checked_step "Passo 3.4 - Quantizacao do Qwen" etl_quantize_qwen test_etl_quantize_qwen
+      run_checked_step "Passo 3.5 - Limpeza dos modelos FP32" etl_cleanup_fp32_models test_etl_cleanup_fp32_models
+      run_checked_step "Passo 3.6 - Ingestao no Weaviate" etl_ingest_weaviate test_etl_ingest_weaviate
+      ;;
+    labse-download)
+      run_checked_step "Passo 3.1 - Download do LaBSE" etl_download_labse test_etl_download_labse
+      ;;
+    labse-quantize)
+      run_checked_step "Passo 3.2 - Quantizacao do LaBSE" etl_quantize_labse test_etl_quantize_labse
+      ;;
+    qwen-download)
+      run_checked_step "Passo 3.3 - Download do Qwen" etl_download_qwen test_etl_download_qwen
+      ;;
+    qwen-quantize)
+      run_checked_step "Passo 3.4 - Quantizacao do Qwen" etl_quantize_qwen test_etl_quantize_qwen
+      ;;
+    cleanup-fp32)
+      run_checked_step "Passo 3.5 - Limpeza dos modelos FP32" etl_cleanup_fp32_models test_etl_cleanup_fp32_models
+      ;;
+    ingest)
+      run_checked_step "Passo 3.6 - Ingestao no Weaviate" etl_ingest_weaviate test_etl_ingest_weaviate
+      ;;
+    cleanup-venv)
+      run_checked_step "Passo 4 - Remover ambiente virtual" step_cleanup_venv test_cleanup_venv
+      ;;
+    apps)
+      run_checked_step "Passo 5 - Subir app e agente" step_start_app_services test_start_app_services
+      ;;
+    *)
+      fail "Alvo invalido: '$TARGET'. Use --help para ver as opcoes."
+      ;;
+  esac
+
+  log_banner "Pipeline concluido com sucesso"
+}
+
+main "$@"

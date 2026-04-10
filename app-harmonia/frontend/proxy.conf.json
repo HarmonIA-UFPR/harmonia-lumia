@@ -1,10 +1,19 @@
 {
   "/api": {
-    "target": "http://200.17.199.216:55030",
+    "target": "http://localhost:55030",
     "secure": false,
     "changeOrigin": true,
     "pathRewrite": {
       "^/api": ""
+    },
+    "logLevel": "debug"
+  },
+  "/agent": {
+    "target": "http://localhost:55036",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/agent": ""
     },
     "logLevel": "debug"
   }

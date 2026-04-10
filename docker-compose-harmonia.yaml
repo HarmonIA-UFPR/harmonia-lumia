@@ -50,7 +50,6 @@ services:
       POSTGRES_DB: harmonia
       POSTGRES_INITDB_ARGS: "--locale=pt_BR.UTF-8 --encoding=UTF8"
       LANG: pt_BR.utf8
-    command: ["postgres", "-p", "5400"]
     ports:
       - "55031:5400"
     volumes:
@@ -69,7 +68,6 @@ services:
       POSTGRES_USER: harmonia
       POSTGRES_PASSWORD: "harmonia2025"
       POSTGRES_DB: harmonia
-    command: ["postgres", "-p", "5401"]
     ports:
       - "55032:5401"
     volumes:
@@ -79,7 +77,7 @@ services:
       - harmonia-network
 
   harmonia-app:
-    image: harmonia-app:v0.1
+    image: harmonia-app:v0.2
     build:
       context: ./app-harmonia/backend
       dockerfile: Dockerfile
@@ -96,7 +94,7 @@ services:
         - harmonia-network
 
   harmonia-agente:
-    image: harmonia-agente:v0.1
+    image: harmonia-agente:v0.2
     build:
       context: ./app-agente
       dockerfile: src/agente_chat/Dockerfile
