@@ -86,3 +86,25 @@ Execução por etapas:
 # Passo 5
 ./harmonia --apps
 ```
+
+## Interação com o chat
+
+1. Agente (API do chatbot)
+```bash
+http://localhost:55036
+```
+
+2. Na tela principal clique em: **"Entrar"**
+
+3. Na tela de login entre com um destes usuários
+   
+| e-mail para login           | password      | 
+|-----------------------------|---------------|
+| beto.beginner1@email.com    | beginner1     |
+| ive.intermediate1@email.com | intermediate  |
+| alex.advanced1@email.com    | advanced1     |
+| elena.expert1@email.com     | expert1       |
+
+4. Para criar um novo chat, na tela de chat clique sobre o nome do usuário (ex: "Beto") e depois clique em:  **"Novo Chat"**.
+   
+6. Agora é só solicitar suas recomendações! 
