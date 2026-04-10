@@ -1,0 +1,38 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite / local DBs
+*.sqlite3
+
+modelos/
+model_cache/
+
+# Ambientes virtuais
+venv/
+.venv/
+.git
+poetry.lock
+
+
+# Logs
+tests/logs
+*.log
+
+# macOS
+.DS_Store
+
+# csv
+*.csv
+
+# Docker volumes / bancos
+*.db
+*.wal
+*.log
+
+
+# Pastas temporárias
+modelos/
+venv/
+.codex
