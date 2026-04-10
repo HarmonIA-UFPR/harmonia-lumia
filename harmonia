@@ -19,6 +19,7 @@ readonly LINE="# ---------------------------------------------------------------
 readonly COMPOSE_FILE="docker-compose-harmonia.yaml"
 readonly VENV_DIR="venv"
 readonly REQUIRED_PYTHON="3.12"
+readonly MODELS_DIR="modelos"
 
 readonly CORE_SERVICES=(
   "harmonia-weaviate"
@@ -30,6 +31,9 @@ readonly APP_SERVICES=(
   "harmonia-app"
   "harmonia-agente"
 )
+readonly UI_SERVICE="harmonia-ui"
+
+MODELS_DIR_PREEXISTING="false"
 
 fail() {
   echo ""
@@ -63,7 +67,7 @@ Opcoes ETL detalhadas:
 
 Opcoes finais:
   -r, --cleanup-venv     Passo 4: remove ambiente virtual
-  -s, --apps             Passo 5: sobe app e agente
+  -s, --apps             Passo 5: sobe app, agente e UI
   -h, --help             Exibe este menu de ajuda
 
 Exemplos:
@@ -152,7 +156,37 @@ test_prepare_venv_and_poetry() {
   poetry run python -c "import huggingface_hub"
 }
 
+detect_preexisting_models_dir() {
+  if [[ -d "$MODELS_DIR" ]]; then
+    MODELS_DIR_PREEXISTING="true"
+    echo "[INFO] Pasta '$MODELS_DIR' detectada no inicio da execucao."
+    echo "[INFO] Downloads do LaBSE e do Qwen serao ignorados para evitar novo download."
+  fi
+}
+
+assert_model_artifact_exists_after_download_skip() {
+  local model_name="$1"
+  local fp32_config_path="$2"
+  local int8_xml_path="$3"
+
+  if [[ -f "$fp32_config_path" ]]; then
+    return 0
+  fi
+
+  if [[ -f "$int8_xml_path" ]]; then
+    echo "[INFO] Modelo '$model_name' ja possui artefato INT8 local. Seguiremos sem novo download."
+    return 0
+  fi
+
+  fail "A pasta '$MODELS_DIR' existe, mas nenhum artefato valido de '$model_name' foi encontrado."
+}
+
 etl_download_labse() {
+  if [[ "$MODELS_DIR_PREEXISTING" == "true" ]]; then
+    echo "[SKIP] Download do LaBSE ignorado porque '$MODELS_DIR' ja existia no inicio."
+    return 0
+  fi
+
   poetry run python -m etl_pipeline.download_model \
     --repo-id "sentence-transformers/LaBSE" \
     --local-dir "modelos/LaBSE" \
@@ -160,11 +194,24 @@ etl_download_labse() {
 }
 
 test_etl_download_labse() {
+  if [[ "$MODELS_DIR_PREEXISTING" == "true" ]]; then
+    assert_model_artifact_exists_after_download_skip \
+      "LaBSE" \
+      "modelos/LaBSE/config.json" \
+      "modelos/LaBSE_int8/openvino_model.xml"
+    return 0
+  fi
+
   assert_dir_exists "modelos/LaBSE"
   assert_file_exists "modelos/LaBSE/config.json"
 }
 
 etl_quantize_labse() {
+  if [[ ! -d "modelos/LaBSE" && -f "modelos/LaBSE_int8/openvino_model.xml" ]]; then
+    echo "[SKIP] Quantizacao LaBSE ignorada: FP32 ausente e INT8 ja disponivel."
+    return 0
+  fi
+
   poetry run python -m etl_pipeline.quantize_labse
 }
 
@@ -174,17 +221,35 @@ test_etl_quantize_labse() {
 }
 
 etl_download_qwen() {
+  if [[ "$MODELS_DIR_PREEXISTING" == "true" ]]; then
+    echo "[SKIP] Download do Qwen ignorado porque '$MODELS_DIR' ja existia no inicio."
+    return 0
+  fi
+
   poetry run python -m etl_pipeline.download_model \
     --repo-id "Qwen/Qwen2.5-1.5B-Instruct" \
     --local-dir "modelos/Qwen"
 }
 
 test_etl_download_qwen() {
+  if [[ "$MODELS_DIR_PREEXISTING" == "true" ]]; then
+    assert_model_artifact_exists_after_download_skip \
+      "Qwen" \
+      "modelos/Qwen/config.json" \
+      "modelos/Qwen_int8/openvino_model.xml"
+    return 0
+  fi
+
   assert_dir_exists "modelos/Qwen"
   assert_file_exists "modelos/Qwen/config.json"
 }
 
 etl_quantize_qwen() {
+  if [[ ! -d "modelos/Qwen" && -f "modelos/Qwen_int8/openvino_model.xml" ]]; then
+    echo "[SKIP] Quantizacao Qwen ignorada: FP32 ausente e INT8 ja disponivel."
+    return 0
+  fi
+
   poetry run python -m etl_pipeline.quantize_model
 }
 
@@ -241,6 +306,7 @@ test_cleanup_venv() {
 
 step_start_app_services() {
   docker compose -f "$COMPOSE_FILE" up -d "${APP_SERVICES[@]}"
+  docker compose -f "$COMPOSE_FILE" up -d "$UI_SERVICE"
 }
 
 test_start_app_services() {
@@ -248,6 +314,7 @@ test_start_app_services() {
   for service in "${APP_SERVICES[@]}"; do
     assert_service_running "$service"
   done
+  assert_service_running "$UI_SERVICE"
 }
 
 parse_args() {
@@ -342,6 +409,7 @@ parse_args() {
 
 main() {
   parse_args "$@"
+  detect_preexisting_models_dir
 
   case "$TARGET" in
     all)
@@ -358,7 +426,7 @@ main() {
       run_checked_step "Passo 3.6 - Ingestao no Weaviate" etl_ingest_weaviate test_etl_ingest_weaviate_quiet
 
       run_checked_step "Passo 4 - Remover ambiente virtual" step_cleanup_venv test_cleanup_venv
-      run_checked_step "Passo 5 - Subir app e agente" step_start_app_services test_start_app_services
+      run_checked_step "Passo 5 - Subir app, agente e UI" step_start_app_services test_start_app_services
       ;;
     core)
       run_checked_step "Passo 1 - Subir infraestrutura base" step_start_core_services test_start_core_services
@@ -400,7 +468,7 @@ main() {
       run_checked_step "Passo 4 - Remover ambiente virtual" step_cleanup_venv test_cleanup_venv
       ;;
     apps)
-      run_checked_step "Passo 5 - Subir app e agente" step_start_app_services test_start_app_services
+      run_checked_step "Passo 5 - Subir app, agente e UI" step_start_app_services test_start_app_services
       ;;
     *)
       fail "Alvo invalido: '$TARGET'. Use --help para ver as opcoes."
