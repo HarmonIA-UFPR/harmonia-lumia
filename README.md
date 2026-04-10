@@ -89,14 +89,14 @@ Execução por etapas:
 
 ## Interação com o chat
 
-1. Agente (API do chatbot)
+1. No navegador de sua preferência, acesse:
 ```bash
 http://localhost:55036
 ```
 
-2. Na tela principal clique em: **"Entrar"**
+2. Na tela de boas-vindas, clique em **“Entrar”**.
 
-3. Na tela de login entre com um destes usuários
+3. Na tela de login entre com um destes usuários:
    
 | e-mail para login           | password      | 
 |-----------------------------|---------------|
@@ -105,11 +105,12 @@ http://localhost:55036
 | alex.advanced1@email.com    | advanced1     |
 | elena.expert1@email.com     | expert1       |
 
-4. Para criar um novo chat, na tela de chat clique sobre o nome do usuário (ex: "Beto") e depois clique em:  **"Novo Chat"**.
+4. Para criar um novo chat, no canto inferior esquerdo da barra lateral, clique sobre o nome do usuário (ex.: “Beto”) e, em seguida, selecione a opção **“Novo Chat”**.
    
-6. Agora é só solicitar suas recomendações!
+5. Agora é só solicitar suas recomendações!
 
-7. Observação:
-Na base de dados referente à esta Fase do projeto, foi identificado que algumas fontes apresentam desatualizações, especialmente no que diz respeito a links de páginas oficiais, repositórios e documentações de determinadas ferramentas. Essa situação é relativamente comum em ambientes que lidam com tecnologias dinâmicas, nas quais conteúdos e endereços são frequentemente modificados ou descontinuados ao longo do tempo.
+Observação:
+   
+Na base de dados referente a esta fase do projeto, foi identificado que algumas fontes apresentam desatualizações, especialmente no que diz respeito a links de páginas oficiais, repositórios e documentações de determinadas ferramentas. Essa situação é relativamente comum em ambientes que lidam com tecnologias dinâmicas, nos quais conteúdos e endereços são frequentemente modificados ou descontinuados ao longo do tempo.
 
 Com o objetivo de garantir a qualidade, a confiabilidade e a atualidade das informações disponibilizadas, mantém-se um processo contínuo de revisão e atualização dessas fontes, o qual se estende e se consolida ao longo das próximas fases do projeto.
