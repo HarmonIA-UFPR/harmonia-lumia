@@ -12,7 +12,7 @@ COPY frontend/ ./
 
 RUN npm run build -- --configuration production
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:alpine AS runtime
 
 # Configuracao do Nginx (SPA + reverse proxy das APIs do projeto).
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf

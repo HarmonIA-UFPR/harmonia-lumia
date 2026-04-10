@@ -111,6 +111,19 @@ services:
     networks:
       - harmonia-network
 
+  harmonia-ui:
+    image: harmonia-ui:v0.2
+    build:
+      context: ./app-harmonia
+      dockerfile: frontend/Dockerfile
+    container_name: harmonia-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - harmonia-app
+      - harmonia-agente
+    networks:
+      - harmonia-network
 
 # ======================
 #  VOLUMES
