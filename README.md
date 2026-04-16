@@ -87,7 +87,7 @@ Execução por etapas:
 ./harmonia --apps
 ```
 
-## Interação com o chat
+## Interação com o Assistente de Recomendação de Ferramentas de IA
 
 1. No navegador de sua preferência, acesse:
 ```bash
