@@ -1,7 +1,7 @@
 ![Texto HarmonIA (fundo azul)](app-harmonia/frontend/public/images/texto-bg-azul.jpg)
 
 
-Repositório com a versão estável do projeto HarmonIA (Fase 1), incluindo bootstrap completo da infraestrutura, pipeline ETL e subida das aplicações.
+Repositório com a versão estável do projeto HarmonIA LUMIA (Fase 1), incluindo bootstrap completo da infraestrutura, pipeline ETL e subida das aplicações.
 
 ## Requisitos obrigatórios
 
