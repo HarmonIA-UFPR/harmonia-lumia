@@ -6,6 +6,7 @@ Repositório com a versão estável do projeto HarmonIA LUMIA (Fase 1 - protóti
 ## Requisitos obrigatórios
 
 - Shell: `bash`
+- Ripgrep: `latest`
 - Python: `3.12`
 
 > O script `./harmonia` foi escrito para execução em `bash` e valida a versão do Python como `3.12`.
